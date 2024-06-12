@@ -1,0 +1,28 @@
+# Variables
+$siteUrl = "https://yoursharepointsite.com/sites/yourSite"
+$listName = "YourList"
+$jiratoken = "your_jira_api_token"
+$jiraurl = "https://yourjirasite/rest/api/2/issue"
+$projectKey = "PROJ"
+$issueType = "Task"
+
+# Connect to SharePoint
+Connect-PnPOnline -Url $siteUrl -Interactive
+
+# Get SharePoint List Items
+$items = Get-PnPListItem -List $listName
+
+foreach ($item in $items) {
+    # Create JIRA Issue Payload
+    $body = @{
+        fields = @{
+            project     = @{ key = $projectKey }
+            summary     = $item["Title"]
+            description = $item["Description"]
+            issuetype   = @{ name = $issueType }
+        }
+    } | ConvertTo-Json
+
+    # Call JIRA API to Create Issue
+    Invoke-RestMethod -Uri $jiraurl -Method Post -Body $body -ContentType "application/json" -Headers @{Authorization = "Basic $jiratoken"}
+}
